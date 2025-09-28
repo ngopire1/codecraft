@@ -1,0 +1,27 @@
+// JavaScript Example: Reading Entities
+// Filterable fields: title, language, difficulty, description, problem_statement, input_format, output_format, test_cases, points, time_limit
+async function fetchChallengeEntities() {
+    const response = await fetch(`https://app.base44.com/api/apps/68d8eb0f5c54707a170ec1ff/entities/Challenge`, {
+        headers: {
+            'api_key': 'c89e89f91a824df5a2db884768f77166', // or use await User.me() to get the API key
+            'Content-Type': 'application/json'
+        }
+    });
+    const data = await response.json();
+    console.log(data);
+}
+
+// JavaScript Example: Updating an Entity
+// Filterable fields: title, language, difficulty, description, problem_statement, input_format, output_format, test_cases, points, time_limit
+async function updateChallengeEntity(entityId, updateData) {
+    const response = await fetch(`https://app.base44.com/api/apps/68d8eb0f5c54707a170ec1ff/entities/Challenge/${entityId}`, {
+        method: 'PUT',
+        headers: {
+            'api_key': 'c89e89f91a824df5a2db884768f77166', // or use await User.me() to get the API key
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+    });
+    const data = await response.json();
+    console.log(data);
+}

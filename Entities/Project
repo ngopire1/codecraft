@@ -1,0 +1,54 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Project title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "javascript",
+        "python",
+        "css"
+      ],
+      "description": "Programming language"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "Difficulty level"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Project requirements"
+    },
+    "starter_code": {
+      "type": "string",
+      "description": "Starting code template"
+    },
+    "points": {
+      "type": "number",
+      "default": 25,
+      "description": "Points awarded for completion"
+    }
+  },
+  "required": [
+    "title",
+    "language",
+    "difficulty",
+    "requirements"
+  ]
+}

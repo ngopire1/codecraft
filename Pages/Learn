@@ -1,0 +1,345 @@
+import React, { useState, useEffect } from "react";
+import { Lesson, User } from "@/entities/all";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { 
+  BookOpen, 
+  Play, 
+  CheckCircle, 
+  Star,
+  Code,
+  Zap,
+  Filter,
+  Search
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ReactMarkdown from "react-markdown";
+import AIAssistant from "../components/AIAssistant";
+
+export default function Learn() {
+  const [lessons, setLessons] = useState([]);
+  const [user, setUser] = useState(null);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [filterLanguage, setFilterLanguage] = useState("all");
+  const [filterDifficulty, setFilterDifficulty] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    const [lessonsData, userData] = await Promise.all([
+      Lesson.list('-created_date'),
+      User.me().catch(() => null)
+    ]);
+    setLessons(lessonsData);
+    setUser(userData);
+  };
+
+  const filteredLessons = lessons.filter(lesson => {
+    const matchesLanguage = filterLanguage === "all" || lesson.language === filterLanguage;
+    const matchesDifficulty = filterDifficulty === "all" || lesson.difficulty === filterDifficulty;
+    const matchesSearch = lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         lesson.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesLanguage && matchesDifficulty && matchesSearch;
+  });
+
+  const isLessonCompleted = (lessonId) => {
+    return user?.completed_lessons?.includes(lessonId) || false;
+  };
+
+  const completeLesson = async (lesson) => {
+    if (!user || isLessonCompleted(lesson.id)) return;
+    
+    setIsCompleting(true);
+    try {
+      const newCompletedLessons = [...(user.completed_lessons || []), lesson.id];
+      const newTotalPoints = (user.total_points || 0) + (lesson.points || 10);
+      
+      await User.updateMyUserData({
+        completed_lessons: newCompletedLessons,
+        total_points: newTotalPoints
+      });
+      
+      // Update local state
+      setUser(prev => ({
+        ...prev,
+        completed_lessons: newCompletedLessons,
+        total_points: newTotalPoints
+      }));
+    } catch (error) {
+      console.error("Error completing lesson:", error);
+    }
+    setIsCompleting(false);
+  };
+
+  const languageColors = {
+    javascript: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    python: "bg-blue-100 text-blue-800 border-blue-200",
+    css: "bg-purple-100 text-purple-800 border-purple-200"
+  };
+
+  const difficultyColors = {
+    beginner: "bg-green-100 text-green-800 border-green-200",
+    intermediate: "bg-orange-100 text-orange-800 border-orange-200", 
+    advanced: "bg-red-100 text-red-800 border-red-200"
+  };
+
+  return (
+    <div className="min-h-screen p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl lg:text-4xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              Learn Programming
+            </span>
+          </h1>
+          <p className="text-xl text-slate-600 mb-6">
+            Master JavaScript, Python, and CSS with interactive lessons
+          </p>
+          
+          {user && (
+            <div className="flex items-center gap-4">
+              <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2">
+                <BookOpen className="w-4 h-4 mr-2" />
+                {user.completed_lessons?.length || 0} Lessons Completed
+              </Badge>
+              <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2">
+                <Star className="w-4 h-4 mr-2" />
+                {user.total_points || 0} Points
+              </Badge>
+            </div>
+          )}
+        </div>
+
+        {selectedLesson ? (
+          /* Lesson View */
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-2xl mb-2">{selectedLesson.title}</CardTitle>
+                      <div className="flex gap-2 mb-4">
+                        <Badge className={`border ${languageColors[selectedLesson.language]}`}>
+                          {selectedLesson.language}
+                        </Badge>
+                        <Badge className={`border ${difficultyColors[selectedLesson.difficulty]}`}>
+                          {selectedLesson.difficulty}
+                        </Badge>
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          <Star className="w-3 h-3 mr-1" />
+                          {selectedLesson.points || 10} points
+                        </Badge>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedLesson(null)}
+                    >
+                      Back to Lessons
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose max-w-none">
+                    <ReactMarkdown>{selectedLesson.content}</ReactMarkdown>
+                  </div>
+                  
+                  {selectedLesson.code_example && (
+                    <div className="mt-6">
+                      <h3 className="text-lg font-semibold mb-3">Code Example:</h3>
+                      <Card className="bg-slate-900 text-slate-100">
+                        <CardContent className="p-4">
+                          <pre className="overflow-x-auto">
+                            <code>{selectedLesson.code_example}</code>
+                          </pre>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                  
+                  <div className="mt-8 flex justify-center">
+                    {!isLessonCompleted(selectedLesson.id) ? (
+                      <Button
+                        onClick={() => completeLesson(selectedLesson)}
+                        disabled={isCompleting}
+                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8 py-3"
+                      >
+                        {isCompleting ? (
+                          <>
+                            <Zap className="w-5 h-5 mr-2 animate-spin" />
+                            Completing...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Complete Lesson
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-800 px-6 py-3 text-base">
+                        <CheckCircle className="w-5 h-5 mr-2" />
+                        Completed! +{selectedLesson.points || 10} points
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {user && (
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">JavaScript</span>
+                          <span className="text-sm text-slate-500">65%</span>
+                        </div>
+                        <Progress value={65} className="h-2" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">Python</span>
+                          <span className="text-sm text-slate-500">40%</span>
+                        </div>
+                        <Progress value={40} className="h-2" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-medium">CSS</span>
+                          <span className="text-sm text-slate-500">80%</span>
+                        </div>
+                        <Progress value={80} className="h-2" />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          /* Lessons List View */
+          <>
+            {/* Filters */}
+            <div className="flex flex-col lg:flex-row gap-4 mb-8">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search lessons..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <Select value={filterLanguage} onValueChange={setFilterLanguage}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Languages</SelectItem>
+                  <SelectItem value="javascript">JavaScript</SelectItem>
+                  <SelectItem value="python">Python</SelectItem>
+                  <SelectItem value="css">CSS</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Language Tabs */}
+            <Tabs defaultValue="all" className="mb-8">
+              <TabsList className="grid w-full grid-cols-4 lg:w-96">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="javascript">JavaScript</TabsTrigger>
+                <TabsTrigger value="python">Python</TabsTrigger>
+                <TabsTrigger value="css">CSS</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* Lessons Grid */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredLessons.map((lesson) => (
+                <Card 
+                  key={lesson.id}
+                  className="group hover:scale-[1.02] transition-all duration-300 cursor-pointer hover:shadow-xl"
+                  onClick={() => setSelectedLesson(lesson)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge className={`border ${languageColors[lesson.language]}`}>
+                        <Code className="w-3 h-3 mr-1" />
+                        {lesson.language}
+                      </Badge>
+                      {isLessonCompleted(lesson.id) && (
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                      )}
+                    </div>
+                    <CardTitle className="text-lg group-hover:text-green-600 transition-colors">
+                      {lesson.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-slate-600 mb-4 line-clamp-2">
+                      {lesson.description}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-2">
+                        <Badge className={`border ${difficultyColors[lesson.difficulty]}`}>
+                          {lesson.difficulty}
+                        </Badge>
+                        <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                          <Star className="w-3 h-3 mr-1" />
+                          {lesson.points || 10}
+                        </Badge>
+                      </div>
+                      <Button size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Play className="w-4 h-4 mr-2" />
+                        Start
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {filteredLessons.length === 0 && (
+              <div className="text-center py-12">
+                <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-slate-600 mb-2">No lessons found</h3>
+                <p className="text-slate-500">Try adjusting your search criteria</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <AIAssistant context="learn" />
+    </div>
+  );
+}

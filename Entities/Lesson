@@ -1,0 +1,51 @@
+{
+  "name": "Lesson",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Lesson title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Lesson description"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "javascript",
+        "python",
+        "css"
+      ],
+      "description": "Programming language"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "Difficulty level"
+    },
+    "content": {
+      "type": "string",
+      "description": "Lesson content in markdown"
+    },
+    "code_example": {
+      "type": "string",
+      "description": "Code example for the lesson"
+    },
+    "points": {
+      "type": "number",
+      "default": 10,
+      "description": "Points awarded for completion"
+    }
+  },
+  "required": [
+    "title",
+    "language",
+    "difficulty",
+    "content"
+  ]
+}

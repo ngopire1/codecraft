@@ -1,0 +1,67 @@
+{
+  "name": "Challenge",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Challenge title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Challenge description"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "javascript",
+        "python",
+        "css"
+      ],
+      "description": "Programming language"
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "description": "Difficulty level"
+    },
+    "problem_statement": {
+      "type": "string",
+      "description": "The coding problem to solve"
+    },
+    "test_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string"
+          },
+          "expected_output": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Test cases for validation"
+    },
+    "time_limit": {
+      "type": "number",
+      "default": 30,
+      "description": "Time limit in minutes"
+    },
+    "points": {
+      "type": "number",
+      "default": 50,
+      "description": "Points awarded for completion"
+    }
+  },
+  "required": [
+    "title",
+    "language",
+    "difficulty",
+    "problem_statement"
+  ]
+}
